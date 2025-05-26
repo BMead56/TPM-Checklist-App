@@ -1,0 +1,176 @@
+/* === Layout Reset === */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  background-color: #3c6cfb;
+  color: #333;
+}
+
+/* === App Layout === */
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  background-color: #f9f4f4f1;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* === Fade In Animation === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Typography === */
+h1 {
+  text-align: left;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+h2,
+h3 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #444;
+}
+
+/* === Form Layout === */
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  min-width: 120px;
+  font-weight: bold;
+}
+
+/* Checklist Questions */
+.form-question label {
+  display: flex;
+  margin: 0.5rem 0;
+  gap: 1rem;
+}
+
+/* === Dropdown Styling === */
+select {
+  appearance: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='gray' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  cursor: pointer;
+}
+
+select:hover {
+  border-color: #999;
+}
+
+select:focus {
+  border-color: #2612d9;
+  box-shadow: 0 0 0 2px rgba(38, 18, 217, 0.2);
+  outline: none;
+}
+
+/* === Button Styling === */
+button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: #2612d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #1d0fb3;
+}
+
+button:focus {
+  outline: 3px solid rgba(38, 18, 217, 0.3);
+}
+
+/* === Layout for Button Groups === */
+.camera-controls,
+.form-buttons {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* === Video Preview Styling === */
+video {
+  border-radius: 8px;
+  margin-top: 1rem;
+  max-width: 100%;
+  height: auto;
+}
+
+/* === Mobile Friendly Adjustments === */
+@media (max-width: 600px) {
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-group label {
+    margin-bottom: 0.5rem;
+  }
+
+  select,
+  button {
+    width: 100%;
+  }
+
+  .camera-controls,
+  .form-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* === Link Styling === */
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #535bf2;
+}
