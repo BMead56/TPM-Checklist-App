@@ -9,7 +9,7 @@ body {
   font-family: 'Segoe UI', sans-serif;
   font-size: 1rem;
   line-height: 1.5;
-  background-color: #3c6cfb;
+  background-color: #bbbdc4;
   color: #333;
 }
 
@@ -98,7 +98,7 @@ select:hover {
 }
 
 select:focus {
-  border-color: #2612d9;
+  border-color: #ebebf1;
   box-shadow: 0 0 0 2px rgba(38, 18, 217, 0.2);
   outline: none;
 }
@@ -108,7 +108,7 @@ button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
   font-weight: 500;
-  background-color: #2612d9;
+  background-color: #6f6f72;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -117,7 +117,7 @@ button {
 }
 
 button:hover {
-  background-color: #1d0fb3;
+  background-color: #adaddd;
 }
 
 button:focus {

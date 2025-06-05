@@ -18,7 +18,10 @@ function QuestionForm({ lineId, onSubmit }) {
     fetchQuestions(lineId).then((data) => {
       const initialResponses = {};
       data.forEach((q) => {
-        initialResponses[q.id] = false;
+        initialResponses[q.QID] = { 
+          checked: false,
+          photoTaken: false,
+        };
       });
 
       setQuestions(data);
@@ -29,7 +32,10 @@ function QuestionForm({ lineId, onSubmit }) {
   const handleResponseChange = (questionId, checked) => {
     setResponses((prev) => ({
       ...prev,
-      [questionId]: checked,
+      [questionId]: {
+        ...prev[questionId],
+        checked,
+      },
     }));
   };
 
@@ -74,10 +80,17 @@ function QuestionForm({ lineId, onSubmit }) {
     setPhotoTaken(false);
   };
 
-  const handleTakePhoto = () => {
-    setPhotoTaken(true);
-    stopCamera();
-  };
+  const handlePhotoCapture = (questionId) => {
+  setResponses((prev) => ({
+    ...prev,
+    [questionId]: {
+      ...prev[questionId],
+      photoTaken: true,
+    },
+  }));
+  stopCamera();
+};
+
 
   const handleRetakePhoto = () => {
     setPhotoTaken(false);
@@ -120,30 +133,31 @@ function QuestionForm({ lineId, onSubmit }) {
 
       {/* Checklist Questions */}
       {questions.map((q) => (
-        <div key={q.id} className="form-question">
+        <div key={q.QID} className="form-question">
           <label>
             <input
               type="checkbox"
-              checked={responses[q.id] || false}
-              onChange={(e) => handleResponseChange(q.id, e.target.checked)}
+              checked={responses[q.QID] || false}
+              onChange={(e) => handleResponseChange(q.QID, e.target.checked)}
             />
-            {q.text}
+            {q.Question}
           </label>
+
+          {q.ImgRequired && (
+            <div className="camera-controls">
+              {!cameraActive && !photoTaken && (
+                <button type="button" onClick={startCamera}>Start Camera</button>
+              )}
+              {cameraActive && !photoTaken && (
+                <button type="button" onClick={handlePhotoCapture(q.QID)}>Capture Photo</button>
+              )}
+              {photoTaken && (
+                <button type="button" onClick={handleRetakePhoto}>Retake Photo</button>
+              )}
+            </div>
+          )}
         </div>
       ))}
-
-      {/* Camera Buttons */}
-      <div className="camera-controls">
-        {!cameraActive && !photoTaken && (
-          <button type="button" onClick={startCamera}>Start Camera</button>
-        )}
-        {cameraActive && !photoTaken && (
-          <button type="button" onClick={handleTakePhoto}>Capture Photo</button>
-        )}
-        {photoTaken && (
-          <button type="button" onClick={handleRetakePhoto}>Retake Photo</button>
-        )}
-      </div>
 
       {/* Live Video Preview */}
       {cameraActive && (

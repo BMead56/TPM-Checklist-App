@@ -27,7 +27,9 @@ function ChecklistForm({ onLineSelected }) {
   // Load initial plant and line type options
   useEffect(() => {
     fetchPlants().then(setPlants);
+    console.log('Fetching plant types...');
     fetchLineTypes().then(setLineTypes);
+    console.log('Fetching line types...');
   }, []);
 
   // When plant changes, reset downstream selections and load departments
