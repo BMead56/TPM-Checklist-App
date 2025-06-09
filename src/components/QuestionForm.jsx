@@ -41,9 +41,7 @@ function QuestionForm({ lineId, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const confirmed = window.confirm("Are you sure you want to submit?");
-    if (!confirmed) return;
+    if (!window.confirm("Are you sure you want to submit?")) return;
 
     const fullSubmission = {
       name,
@@ -81,16 +79,15 @@ function QuestionForm({ lineId, onSubmit }) {
   };
 
   const handlePhotoCapture = (questionId) => {
-  setResponses((prev) => ({
-    ...prev,
-    [questionId]: {
-      ...prev[questionId],
-      photoTaken: true,
-    },
-  }));
-  stopCamera();
-};
-
+    setResponses((prev) => ({
+      ...prev,
+      [questionId]: {
+        ...prev[questionId],
+        photoTaken: true,
+      },
+    }));
+    stopCamera();
+  };
 
   const handleRetakePhoto = () => {
     setPhotoTaken(false);
@@ -137,19 +134,19 @@ function QuestionForm({ lineId, onSubmit }) {
           <label>
             <input
               type="checkbox"
-              checked={responses[q.QID] || false}
+              checked={responses[q.QID]?.checked || false}
               onChange={(e) => handleResponseChange(q.QID, e.target.checked)}
             />
             {q.Question}
           </label>
 
-          {q.ImgRequired && (
+          {q.ReqImg && (
             <div className="camera-controls">
               {!cameraActive && !photoTaken && (
                 <button type="button" onClick={startCamera}>Start Camera</button>
               )}
               {cameraActive && !photoTaken && (
-                <button type="button" onClick={handlePhotoCapture(q.QID)}>Capture Photo</button>
+                <button type="button" onClick={() => handlePhotoCapture(q.QID)}>Capture Photo</button>
               )}
               {photoTaken && (
                 <button type="button" onClick={handleRetakePhoto}>Retake Photo</button>

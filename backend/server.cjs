@@ -63,7 +63,10 @@ app.get('/getPlants', async (req, res) => {
     const result = await pool.request().query(`
       SELECT DISTINCT Plant FROM ignition.dbo.TPM_CL_Assignments ORDER BY Plant;
     `);
-    return res.json(result.recordset.map(row => row.Plant));
+    return res.json(result.recordset.map(row => ({
+      value: row.Plant,  // or row.PlantName if your backend uses that name
+      label: row.Plant  // or row.PlantName
+    })));
   } catch (err) {
     console.error('Error fetching plants:', err);
     return res.status(500).json({ error: 'Database query failed.' });
@@ -82,14 +85,20 @@ app.get('/getLine', async (req, res) => {
     const result = await pool.request()
       .input('plant', sql.VarChar(50), plantName)
       .query(`
-        SELECT DISTINCT Plant, Line
+        SELECT DISTINCT Plant, Line, BU AS departmentId, Type AS lineTypeId
         FROM ignition.dbo.TPM_CL_Assignments
         WHERE Plant = @plant
         ORDER BY Line;
       `);
  
     // result.recordset is an array of { Plant: 'SPB', Line: 'LineA' }, etc.
-    return res.json(result.recordset);
+    return res.json(result.recordset.map(row => ({
+      value: row.Line,          // dropdown value
+      label: row.Line,        // dropdown label
+      plantId: row.Plant,
+      departmentId: row.departmentId,
+      lineTypeId: row.lineTypeId
+    })));
   }
   catch (err) {
     console.error('Error fetching lines for plant:', err);
@@ -121,6 +130,42 @@ app.get('/getQuestions', async (req, res) => {
     return res.status(500).json({ error: 'Database query failed.' });
   }
 });
+
+// ─── Get Departments (BU) ───────────────────────────────
+app.get('/getDepartments', async (req, res) => {
+  try {
+    const pool = await createPool();
+    const result = await pool.request().query(`
+      SELECT DISTINCT BU FROM ignition.dbo.TPM_CL_Assignments ORDER BY BU;
+    `);
+
+    return res.json(result.recordset.map(row => ({ 
+      value: row.BU,
+      label: row.BU
+    })));
+  } catch (err) {
+    console.error('Error fetching departments:', err);
+    return res.status(500).json({ error: 'Database query failed.' });
+  }
+});
+
+// ─── Get Line Types (Type) ───────────────────────────────
+app.get('/getLineTypes', async (req, res) => {
+  try {
+    const pool = await createPool();
+    const result = await pool.request().query(`
+      SELECT DISTINCT Type FROM ignition.dbo.TPM_CL_Assignments ORDER BY Type;
+    `);
+    return res.json(result.recordset.map(row => ({
+      value: row.Type,
+      label: row.Type
+    })));
+  } catch (err) {
+    console.error('Error fetching line types:', err);
+    return res.status(500).json({ error: 'Database query failed.' });
+  }
+});
+
 
 
  

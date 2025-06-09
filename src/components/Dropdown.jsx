@@ -15,8 +15,8 @@ function Dropdown({ label, id, value, onChange, options }) {
           Select a {label.toLowerCase()}
         </option>
         {options.map(option => (
-          <option key={option.id} value={option.id}>
-            {option.name}
+          <option key={option.value} value={option.value}>
+            {option.label}
           </option>
         ))}
       </select>
