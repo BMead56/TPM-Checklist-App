@@ -18,29 +18,33 @@ function ChecklistForm({ onLineSelected }) {
   const [selectedLineType, setSelectedLineType] = useState('');
   const [selectedLine, setSelectedLine] = useState('');
 
-  // Filter lines based on selected line type (and department optionally)
-  const filteredLines = lines.filter((line) =>
-    selectedLineType && selectedDepartment
-      ? line.lineTypeId === selectedLineType && line.departmentId === selectedDepartment
-      : line.lineTypeId === selectedLineType
-  );
-
-  // Initial load of plants and line types
+  // Load plants and line types initially
   useEffect(() => {
     fetchPlants().then(setPlants);
     fetchLineTypes().then(setLineTypes);
   }, []);
 
-  // When plant changes, fetch departments and lines
+  // When plant changes, fetch departments and reset dropdowns
   useEffect(() => {
     if (selectedPlant) {
       fetchDepartments(selectedPlant).then(setDepartments);
-      fetchLines(selectedPlant).then(setLines);
       setSelectedDepartment('');
       setSelectedLineType('');
       setSelectedLine('');
+      setLines([]);
     }
   }, [selectedPlant]);
+
+  // When all filters are selected, fetch lines
+  useEffect(() => {
+    if (selectedPlant && selectedDepartment && selectedLineType) {
+      fetchLines(selectedPlant, selectedDepartment, selectedLineType).then(data => {
+        console.log('Fetched lines:', data);
+        setLines(data);
+      });
+      setSelectedLine('');
+    }
+  }, [selectedPlant, selectedDepartment, selectedLineType]);
 
   // Notify parent when a line is selected
   useEffect(() => {
@@ -48,6 +52,8 @@ function ChecklistForm({ onLineSelected }) {
       onLineSelected(selectedLine);
     }
   }, [selectedLine, onLineSelected]);
+
+  const filteredLines = lines;
 
   return (
     <div>
@@ -61,7 +67,7 @@ function ChecklistForm({ onLineSelected }) {
         options={plants}
       />
 
-      {departments.length > 0 && (
+      {Array.isArray(departments) && departments.length > 0 && (
         <Dropdown
           label="Department"
           id="department"
@@ -71,7 +77,7 @@ function ChecklistForm({ onLineSelected }) {
         />
       )}
 
-      {lineTypes.length > 0 && (
+      {Array.isArray(lineTypes) && lineTypes.length > 0 && (
         <Dropdown
           label="Line Type"
           id="lineType"
@@ -81,16 +87,13 @@ function ChecklistForm({ onLineSelected }) {
         />
       )}
 
-      {selectedLineType && filteredLines.length > 0 && (
+      {Array.isArray(filteredLines) && filteredLines.length > 0 && (
         <Dropdown
           label="Line"
           id="line"
           value={selectedLine}
           onChange={(e) => setSelectedLine(e.target.value)}
-          options={filteredLines.map((line) => ({
-            value: line.id,
-            label: line.name,
-          }))}
+          options={filteredLines}
         />
       )}
     </div>
