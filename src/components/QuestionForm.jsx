@@ -140,7 +140,7 @@ function QuestionForm({ lineId, onSubmit }) {
             {q.Question}
           </label>
 
-          {q.ReqImg && (
+          {(responses[q.QID]?.checked && (q.ReqImg === true || q.ReqImg === 1 || q.ReqImg === "1")) && (
             <div className="camera-controls">
               {!cameraActive && !photoTaken && (
                 <button type="button" onClick={startCamera}>Start Camera</button>
