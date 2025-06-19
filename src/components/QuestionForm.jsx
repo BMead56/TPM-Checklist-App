@@ -43,11 +43,33 @@ function QuestionForm({ lineId, onSubmit }) {
     e.preventDefault();
     if (!window.confirm("Are you sure you want to submit?")) return;
 
-    const fullSubmission = {
-      name,
-      badge,
-      responses,
-    };
+    const formattedResponses = Object.entries(responses).map(([qid, data]) => ({
+      lineId: lineId,
+      qid: qid,
+      name: name,
+      timestamp: new Date().toISOString(),
+      response: data.checked,
+      imagePath: data.imagePath || null
+    }));
+    
+    fetch('http://localhost:3000/submitResponses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formattedResponses)
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to submit');
+        return res.json();
+      })
+      .then(() => {
+        alert('Checklist submitted successfully!');
+        onSubmit(formattedResponses); // keep your existing logic clean
+      })
+      .catch(err => {
+        console.error('Submission error:', err);
+        alert('There was a problem submitting the checklist.');
+      });
+    
 
     onSubmit(fullSubmission);
   };

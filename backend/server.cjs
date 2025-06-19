@@ -173,7 +173,38 @@ app.get('/getLineTypes', async (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
- 
+
+app.post('/submitResponses', async (req, res) => {
+  const responses = req.body;
+
+  if (!Array.isArray(responses)) {
+    return res.status(400).json({ error: 'Expected an array of responses' });
+  }
+
+  try {
+    const pool = await createPool();
+
+    for (const r of responses) {
+      await pool.request()
+        .input('line', sql.VarChar(50), r.lineId)
+        .input('qid', sql.Int, r.qid)
+        .input('name', sql.VarChar(100), r.name)
+        .input('response', sql.Bit, r.response)
+        .input('timestamp', sql.DateTime, new Date(r.timestamp))
+        .input('imagePath', sql.VarChar(255), r.imagePath)
+        .query(`
+          INSERT INTO [ignition].[dbo].[TPM_CL_Responses] (Line, QID, Name, Response, Timestamp, ImagePath)
+          VALUES (@line, @qid, @name, @response, @timestamp, @imagePath)
+        `);
+    }
+
+    res.json({ status: 'success' });
+  } catch (err) {
+    console.error('Error saving responses:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // ─── Start listening ───────────────────────────────────────────────────────────
 app.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
