@@ -176,10 +176,7 @@ app.get('/getLineTypes', async (req, res) => {
 
 
  
-// ─── 2. Health-check endpoint ──────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
+
 
 app.post('/submitResponses', async (req, res) => {
   const responses = req.body;
@@ -191,18 +188,27 @@ app.post('/submitResponses', async (req, res) => {
   try {
     const pool = await createPool();
 
+    const result = await pool.request().query(`
+      SELECT ISNULL(MAX(RespID), 0) + 1 AS NewRespID
+      FROM ignition.dbo.TPM_CL_Response;
+      `);
+    const RespID = result.recordset[0].NewRespID;
+
     for (const r of responses) {
       await pool.request()
-        .input('line', sql.VarChar(50), r.lineId)
+        .input('respId', sql.Int, RespID)
+        .input('plant', sql.VarChar(50), r.plant)
+        .input('line', sql.VarChar(50), r.line)
+        .input('opName', sql.VarChar(50), r.name)
+        .input('badgeNum', sql.Int, r.badge)
         .input('qid', sql.Int, r.qid)
-        .input('name', sql.VarChar(100), r.name)
         .input('response', sql.Bit, r.response)
-        .input('timestamp', sql.DateTime, new Date(r.timestamp))
-        .input('imagePath', sql.VarChar(255), r.imagePath)
+        .input('subTime', sql.DateTime, new Date(r.timestamp))
+        .input('imgPath', sql.VarChar(255), r.imagePath)
         .query(`
-          INSERT INTO [ignition].[dbo].[TPM_CL_Responses] (Line, QID, Name, Response, Timestamp, ImagePath)
-          VALUES (@line, @qid, @name, @response, @timestamp, @imagePath)
-        `);
+          INSERT INTO ignition.dbo.TPM_CL_Response (RespID, SubTime, Plant, Line, OpName, BadgeNum, QID, Response, ImgPath)
+          VALUES (@respId, @subTime, @plant, @line, @opName, @badgeNum, @qid, @response, @imgPath)
+         `); 
     }
 
     res.json({ status: 'success' });
@@ -210,6 +216,11 @@ app.post('/submitResponses', async (req, res) => {
     console.error('Error saving responses:', err);
     res.status(500).json({ error: 'Database error' });
   }
+});
+
+// ─── 2. Health-check endpoint ──────────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
 // ─── Start listening ───────────────────────────────────────────────────────────

@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fetchQuestions } from '../services/api';
 
-function QuestionForm({ lineId, onSubmit }) {
+function QuestionForm({ lineId, plant, onSubmit }) {
   const [name, setName] = useState('');
   const [badge, setBadge] = useState('');
   const [questions, setQuestions] = useState([]);
   const [responses, setResponses] = useState({});
   const [cameraActive, setCameraActive] = useState(false);
   const [photoTaken, setPhotoTaken] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -41,14 +42,20 @@ function QuestionForm({ lineId, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!window.confirm("Are you sure you want to submit?")) return;
+    if (isSubmitting) return; // Prevent double submission
+    const confirmed = window.confirm('Are you sure you want to submit?');
+    if (!confirmed) return;
+    
+    setIsSubmitting(true); // Disable further submissions
 
     const formattedResponses = Object.entries(responses).map(([qid, data]) => ({
-      lineId: lineId,
-      qid: qid,
+      plant: plant,
+      line: lineId,
       name: name,
-      timestamp: new Date().toISOString(),
+      badge: badge,
+      qid: qid,
       response: data.checked,
+      timestamp: new Date().toISOString(),
       imagePath: data.imagePath || null
     }));
     
@@ -68,10 +75,11 @@ function QuestionForm({ lineId, onSubmit }) {
       .catch(err => {
         console.error('Submission error:', err);
         alert('There was a problem submitting the checklist.');
+      })
+      .finally(() => {
+        setIsSubmitting(false); // re-enable submisstion
       });
     
-
-    onSubmit(fullSubmission);
   };
 
   const startCamera = async () => {
@@ -193,8 +201,16 @@ function QuestionForm({ lineId, onSubmit }) {
 
       {/* Submit */}
       <div className="form-buttons">
-        <button type="submit">Submit</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </button>
       </div>
+
+      {isSubmitting && (
+        <div className="loading-indicator">
+          <span className="spinner" /> Submitting your responses...
+        </div>
+      )}
     </form>
   );
 }
