@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ChecklistForm from './components/ChecklistForm.jsx';
 import QuestionForm from './components/QuestionForm.jsx';
 import './index.css';
+import Logo from './assets/AFL.png';
 
 function App() {
   const [selectedPlant, setSelectedPlant] = useState('');
@@ -16,7 +17,14 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1>TPM Checklist</h1>
+      <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <img
+          src={Logo}
+          alt="Company Logo"
+          style={{ height: '1.5em', verticalAlign: 'middle', marginRight: 0 }}
+        />
+        TPM Checklist
+      </h1>
 
       <ChecklistForm
         key={resetKey} // reset dropdowns
