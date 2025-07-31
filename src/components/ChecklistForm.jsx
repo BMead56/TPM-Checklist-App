@@ -7,7 +7,7 @@ import {
   fetchLineTypes
 } from '../services/api';
 
-function ChecklistForm({ onLineSelected, onPlantSelected }) {
+function ChecklistForm({ onLineSelected }) {
   const [plants, setPlants] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [lines, setLines] = useState([]);
@@ -63,11 +63,7 @@ function ChecklistForm({ onLineSelected, onPlantSelected }) {
         label="Plant"
         id="plant"
         value={selectedPlant}
-        onChange={(e) => {
-          const plant = e.target.value;
-          setSelectedPlant(plant);
-          if (onPlantSelected) onPlantSelected(plant);
-        }}
+        onChange={(e) => setSelectedPlant(e.target.value)}
         options={plants}
       />
 
