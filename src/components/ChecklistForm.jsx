@@ -18,13 +18,11 @@ function ChecklistForm({ onLineSelected }) {
   const [selectedLineType, setSelectedLineType] = useState('');
   const [selectedLine, setSelectedLine] = useState('');
 
-  // Load plants and line types initially
   useEffect(() => {
     fetchPlants().then(setPlants);
     fetchLineTypes().then(setLineTypes);
   }, []);
 
-  // When plant changes, fetch departments and reset dropdowns
   useEffect(() => {
     if (selectedPlant) {
       fetchDepartments(selectedPlant).then(setDepartments);
@@ -35,7 +33,6 @@ function ChecklistForm({ onLineSelected }) {
     }
   }, [selectedPlant]);
 
-  // When all filters are selected, fetch lines
   useEffect(() => {
     if (selectedPlant && selectedDepartment && selectedLineType) {
       fetchLines(selectedPlant, selectedDepartment, selectedLineType).then(data => {
@@ -46,7 +43,6 @@ function ChecklistForm({ onLineSelected }) {
     }
   }, [selectedPlant, selectedDepartment, selectedLineType]);
 
-  // Notify parent when a line is selected
   useEffect(() => {
     if (selectedLine) {
       onLineSelected(selectedLine);
@@ -56,8 +52,8 @@ function ChecklistForm({ onLineSelected }) {
   const filteredLines = lines;
 
   return (
-    <div>
-      <h2>Checklist Form</h2>
+    <div className="space-y-4 bg-white p-6 rounded-xl shadow-md">
+      <h2 className="text-2xl font-semibold text-gray-800">Checklist Form</h2>
 
       <Dropdown
         label="Plant"

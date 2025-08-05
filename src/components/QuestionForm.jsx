@@ -18,7 +18,7 @@ function QuestionForm({ lineId, onSubmit }) {
     fetchQuestions(lineId).then((data) => {
       const initialResponses = {};
       data.forEach((q) => {
-        initialResponses[q.QID] = { 
+        initialResponses[q.QID] = {
           checked: false,
           photoTaken: false,
         };
@@ -41,37 +41,34 @@ function QuestionForm({ lineId, onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!window.confirm("Are you sure you want to submit?")) return;
+    if (!window.confirm('Are you sure you want to submit?')) return;
 
     const formattedResponses = Object.entries(responses).map(([qid, data]) => ({
-      lineId: lineId,
-      qid: qid,
-      name: name,
+      lineId,
+      qid,
+      name,
       timestamp: new Date().toISOString(),
       response: data.checked,
-      imagePath: data.imagePath || null
+      imagePath: data.imagePath || null,
     }));
-    
+
     fetch('http://localhost:3000/submitResponses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formattedResponses)
+      body: JSON.stringify(formattedResponses),
     })
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error('Failed to submit');
         return res.json();
       })
       .then(() => {
         alert('Checklist submitted successfully!');
-        onSubmit(formattedResponses); // keep your existing logic clean
+        onSubmit(formattedResponses);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Submission error:', err);
         alert('There was a problem submitting the checklist.');
       });
-    
-
-    onSubmit(fullSubmission);
   };
 
   const startCamera = async () => {
@@ -120,80 +117,131 @@ function QuestionForm({ lineId, onSubmit }) {
     return () => stopCamera(); // cleanup
   }, []);
 
+useEffect(() => {
+  if (badge.length >= 5) {
+    fetch(`http://localhost:3000/getNameByBadge/${badge}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch name');
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data?.name) {
+          setName(data.name);
+        } else {
+          setName('');
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching name:', err);
+        setName('');
+      });
+  } else {
+    setName('');
+  }
+}, [badge]);
+
+  
+
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Checklist Questions</h3>
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-md max-w-3xl mx-auto space-y-6">
+      <h3 className="text-xl font-semibold text-gray-800">Checklist Questions</h3>
 
       {/* Name Field */}
-      <div className="form-question">
-        <label>
-          Name:
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </label>
+      <div>
+        <label className="block font-medium text-gray-700 mb-1">Name:</label>
+        <input
+          type="text"
+          value={name}
+          readOnly
+          className="w-full px-3 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
+        />
       </div>
 
       {/* Badge Field */}
-      <div className="form-question">
-        <label>
-          Badge Number:
-          <input
-            type="text"
-            value={badge}
-            onChange={(e) => setBadge(e.target.value)}
-            required
-          />
-        </label>
+      <div>
+        <label className="block font-medium text-gray-700 mb-1">Badge Number:</label>
+        <input
+          type="text"
+          value={badge}
+          onChange={(e) => setBadge(e.target.value)}
+          required
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
       {/* Checklist Questions */}
-      {questions.map((q) => (
-        <div key={q.QID} className="form-question">
-          <label>
-            <input
-              type="checkbox"
-              checked={responses[q.QID]?.checked || false}
-              onChange={(e) => handleResponseChange(q.QID, e.target.checked)}
-            />
-            {q.Question}
-          </label>
+      <div className="space-y-4">
+        {questions.map((q) => (
+          <div key={q.QID} className="border p-4 rounded-lg">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={responses[q.QID]?.checked || false}
+                onChange={(e) => handleResponseChange(q.QID, e.target.checked)}
+                className="h-5 w-5"
+              />
+              <span className="text-gray-800">{q.Question}</span>
+            </label>
 
-          {(responses[q.QID]?.checked && (q.ReqImg === true || q.ReqImg === 1 || q.ReqImg === "1")) && (
-            <div className="camera-controls">
-              {!cameraActive && !photoTaken && (
-                <button type="button" onClick={startCamera}>Start Camera</button>
-              )}
-              {cameraActive && !photoTaken && (
-                <button type="button" onClick={() => handlePhotoCapture(q.QID)}>Capture Photo</button>
-              )}
-              {photoTaken && (
-                <button type="button" onClick={handleRetakePhoto}>Retake Photo</button>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+            {(responses[q.QID]?.checked &&
+              (q.ReqImg === true || q.ReqImg === 1 || q.ReqImg === '1')) && (
+              <div className="mt-2 flex gap-3">
+                {!cameraActive && !photoTaken && (
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    Start Camera
+                  </button>
+                )}
+                {cameraActive && !photoTaken && (
+                  <button
+                    type="button"
+                    onClick={() => handlePhotoCapture(q.QID)}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    Capture Photo
+                  </button>
+                )}
+                {photoTaken && (
+                  <button
+                    type="button"
+                    onClick={handleRetakePhoto}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    Retake Photo
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-      {/* Live Video Preview */}
+      {/* Video Preview */}
       {cameraActive && (
-        <div style={{ marginTop: '1rem' }}>
+        <div className="mt-4">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            style={{ width: '100%', maxWidth: '400px' }}
+            className="w-full max-w-md rounded-lg border"
           />
         </div>
       )}
 
       {/* Submit */}
-      <div className="form-buttons">
-        <button type="submit">Submit</button>
+      <div className="pt-4">
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+        >
+          Submit
+        </button>
       </div>
     </form>
   );

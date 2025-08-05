@@ -42,7 +42,7 @@ async function createPool() {
         return pool;
       })
       .catch(err => {
-        console.error('❌ Database Connection Failed: ', err);
+        console.error('Database Connection Failed: ', err);
         throw err;
       });
   }
@@ -133,6 +133,25 @@ app.get('/getQuestions', async (req, res) => {
     return res.status(500).json({ error: 'Database query failed.' });
   }
 });
+
+app.get('/getNameByBadge/:badge', async (req, res) => {
+  const badge = parseInt(req.params.badge, 10);
+  try {
+    const pool = await createPool();
+    const result = await pool.request()
+      .input('badge', sql.Int, badge)
+      .query(`SELECT display_name FROM ignition.dbo.EmployeesInfo WHERE badge_number = @badge`);
+    if (result.recordset.length > 0) {
+      res.json({ name: result.recordset[0].display_name });
+    } else {
+      res.json({ name: '' });
+    }
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).json({'Error fetching name': err.message});
+  }
+});
+
 
 // ─── Get Departments (BU) ───────────────────────────────
 app.get('/getDepartments', async (req, res) => {
