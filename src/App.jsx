@@ -36,7 +36,7 @@ function App() {
         {selectedLineId && (
           <QuestionForm
             lineId={selectedLineId}
-            plant={selectedPlant}
+            plantId={selectedPlant}
             onSubmit={handleChecklistSubmit}
           />
         )}

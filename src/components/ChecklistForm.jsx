@@ -7,7 +7,7 @@ import {
   fetchLineTypes
 } from '../services/api';
 
-function ChecklistForm({ onLineSelected }) {
+function ChecklistForm({ onLineSelected, onPlantSelected }) {
   const [plants, setPlants] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [lines, setLines] = useState([]);
@@ -34,6 +34,12 @@ function ChecklistForm({ onLineSelected }) {
   }, [selectedPlant]);
 
   useEffect(() => {
+      if (selectedPlant && onPlantSelected) {
+        onPlantSelected(selectedPlant);
+      }
+    }, [selectedPlant, onPlantSelected]);
+    
+  useEffect(() => {
     if (selectedPlant && selectedDepartment && selectedLineType) {
       fetchLines(selectedPlant, selectedDepartment, selectedLineType).then(data => {
         console.log('Fetched lines:', data);
@@ -48,6 +54,8 @@ function ChecklistForm({ onLineSelected }) {
       onLineSelected(selectedLine);
     }
   }, [selectedLine, onLineSelected]);
+
+  
 
   const filteredLines = lines;
 

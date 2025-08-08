@@ -1,8 +1,12 @@
 // src/services/api.js
-const BASE_URL = 'http://localhost:3000'; // Adjust this to your backend URL
+
+const BASE_URL = import.meta.env.VITE_LOCAL_HOST;
+//const BASE_URL = 'http://localhost:3000';
+//const BASE_URL = import.meta.env.VITE_LOCAL_HOST;
+// Adjust this to your backend URL
 
 export async function fetchPlants() {
-  const res = await fetch(`${BASE_URL}/getPlants`);
+  const res = await fetch(`${BASE_URL}/api/tpm/getPlants`);
   if (!res.ok) throw new Error('Failed to fetch plants');
   const data = await res.json();
   return data.map(p => ({
@@ -12,7 +16,7 @@ export async function fetchPlants() {
 }
 
 export async function fetchDepartments(plantId) {
-  const res = await fetch(`${BASE_URL}/getDepartments?plantName=${plantId}`);
+  const res = await fetch(`${BASE_URL}/api/tpm/getDepartments?plantName=${plantId}`);
   if (!res.ok) throw new Error('Failed to fetch departments');
   const data = await res.json();
   return data.map(d => ({
@@ -22,7 +26,7 @@ export async function fetchDepartments(plantId) {
 }
 
 export async function fetchLineTypes() {
-  const res = await fetch(`${BASE_URL}/getLineTypes`);
+  const res = await fetch(`${BASE_URL}/api/tpm/getLineTypes`);
   if (!res.ok) throw new Error('Failed to fetch line types');
   const data = await res.json();
   return data.map(t => ({
@@ -32,7 +36,7 @@ export async function fetchLineTypes() {
 }
 
 export async function fetchLines(plantId, department, lineType) {
-  const res = await fetch(`${BASE_URL}/getLine?plantName=${plantId}&department=${department}&lineType=${lineType}`);
+  const res = await fetch(`${BASE_URL}/api/tpm/getLine?plantName=${plantId}&department=${department}&lineType=${lineType}`);
   if (!res.ok) throw new Error('Failed to fetch lines');
 
   const data = await res.json();
@@ -42,7 +46,23 @@ export async function fetchLines(plantId, department, lineType) {
 
 
 export async function fetchQuestions(lineId) {
-  const res = await fetch(`${BASE_URL}/getQuestions?lineName=${lineId}`);
+  const res = await fetch(`${BASE_URL}/api/tpm/getQuestions?lineName=${lineId}`);
   if (!res.ok) throw new Error('Failed to fetch questions');
+  return await res.json();
+}
+
+export async function fetchNameByBadge(badge) {
+  const res = await fetch(`${BASE_URL}/api/tpm/getNameByBadge/${badge}`);
+  if (!res.ok) throw new Error('Failed to fetch name');
+  return await res.json();
+}
+
+export async function submitResponses(formattedResponses) {
+  const res = await fetch(`${BASE_URL}/api/tpm/submitResponses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(formattedResponses),
+  });
+  if (!res.ok) throw new Error('Failed to submit');
   return await res.json();
 }

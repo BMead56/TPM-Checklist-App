@@ -1,248 +1,287 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { fetchQuestions } from '../services/api';
+import { fetchQuestions, fetchNameByBadge } from '../services/api';
+import { v4 as uuidv4 } from 'uuid';
 
-function QuestionForm({ lineId, onSubmit }) {
+const BASE_URL = import.meta.env.VITE_LOCAL_HOST;
+
+function QuestionForm({ plantId, lineId, onSubmit }) {
   const [name, setName] = useState('');
   const [badge, setBadge] = useState('');
   const [questions, setQuestions] = useState([]);
   const [responses, setResponses] = useState({});
-  const [cameraActive, setCameraActive] = useState(false);
-  const [photoTaken, setPhotoTaken] = useState(false);
+
+  const [activeCameraQID, setActiveCameraQID] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
+  // Load questions
   useEffect(() => {
     if (!lineId) return;
 
     fetchQuestions(lineId).then((data) => {
-      const initialResponses = {};
+      const initial = {};
       data.forEach((q) => {
-        initialResponses[q.QID] = {
-          checked: false,
-          photoTaken: false,
-        };
+        initial[q.QID] = { checked: false, photoTaken: false, imageFile: null, previewUrl: null };
       });
-
       setQuestions(data);
-      setResponses(initialResponses);
+      setResponses(initial);
     });
   }, [lineId]);
 
-  const handleResponseChange = (questionId, checked) => {
+  // Auto fetch name by badge
+  useEffect(() => {
+    if (badge.length >= 5) {
+      fetchNameByBadge(badge)
+        .then((data) => setName(data?.name || ''))
+        .catch(() => setName(''));
+    } else {
+      setName('');
+    }
+  }, [badge]);
+
+  // Start camera
+  const startCamera = async (qid) => {
+    stopCamera(); // Close any existing
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
+      setActiveCameraQID(qid);
+    } catch (err) {
+      console.error('Camera access error:', err);
+      alert('Camera access denied or unavailable.');
+    }
+  };
+
+  // Stop camera
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    streamRef.current = null;
+    setActiveCameraQID(null);
+  };
+
+  // Capture photo
+  const handleCapture = (qid) => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageData = canvas.toDataURL('image/jpeg'); // base64 string
+
     setResponses((prev) => ({
       ...prev,
-      [questionId]: {
-        ...prev[questionId],
+      [qid]: {
+        ...prev[qid],
+        photoTaken: true,
+        photoConfirmed: false,
+        imageData,
+        previewUrl: imageData,
+      },
+    }));
+
+    stopCamera();
+  };
+
+
+  const handleRetake = (qid) => {
+    setResponses((prev) => ({
+      ...prev,
+      [qid]: {
+        ...prev[qid],
+        photoTaken: false,
+        photoConfirmed: false,
+        imageFile: null,
+        previewUrl: null,
+      },
+    }));
+    startCamera(qid);
+  };
+
+  const handleResponseChange = (qid, checked) => {
+    setResponses((prev) => ({
+      ...prev,
+      [qid]: {
+        ...prev[qid],
         checked,
       },
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!window.confirm('Are you sure you want to submit?')) return;
+    const respID = uuidv4();
 
-    const formattedResponses = Object.entries(responses).map(([qid, data]) => ({
-      lineId,
-      qid,
-      name,
-      timestamp: new Date().toISOString(),
-      response: data.checked,
-      imagePath: data.imagePath || null,
-    }));
-
-    fetch('http://localhost:3000/submitResponses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formattedResponses),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to submit');
-        return res.json();
-      })
-      .then(() => {
-        alert('Checklist submitted successfully!');
-        onSubmit(formattedResponses);
-      })
-      .catch((err) => {
-        console.error('Submission error:', err);
-        alert('There was a problem submitting the checklist.');
-      });
-  };
-
-  const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      streamRef.current = stream;
-      setCameraActive(true);
+      const formattedResponses = Object.entries(responses).map(([qid, data]) => ({
+        respID,
+        plantId,
+        lineId,
+        qid,
+        name,
+        badge,
+        timestamp: new Date().toISOString(),
+        response: data.checked,
+        imageData: data.imageData || null, // include imageData if present
+      }));
 
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-        }
-      }, 100);
+      await fetch(`${BASE_URL}/api/tpm/submitResponses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formattedResponses),
+      });
+
+      alert('Checklist submitted successfully!');
+      onSubmit();
     } catch (err) {
-      console.error('Camera access failed:', err);
-      alert('Camera access denied or unavailable.');
+      console.error('Error submitting responses:', err);
+      alert('Submission failed.');
     }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
-    setCameraActive(false);
-    setPhotoTaken(false);
-  };
-
-  const handlePhotoCapture = (questionId) => {
-    setResponses((prev) => ({
-      ...prev,
-      [questionId]: {
-        ...prev[questionId],
-        photoTaken: true,
-      },
-    }));
-    stopCamera();
-  };
-
-  const handleRetakePhoto = () => {
-    setPhotoTaken(false);
-    startCamera();
   };
 
   useEffect(() => {
-    return () => stopCamera(); // cleanup
+    return () => stopCamera();
   }, []);
 
-useEffect(() => {
-  if (badge.length >= 5) {
-    fetch(`http://localhost:3000/getNameByBadge/${badge}`)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch name');
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (data?.name) {
-          setName(data.name);
-        } else {
-          setName('');
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching name:', err);
-        setName('');
-      });
-  } else {
-    setName('');
-  }
-}, [badge]);
+  useEffect(() => {
+    if (activeCameraQID && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play();
+    }
+  }, [activeCameraQID]);
 
-  
+  const allPhotosConfirmed = questions.every(q =>
+    !responses[q.QID]?.checked ||
+    !(q.ReqImg === true || q.ReqImg === 1 || q.ReqImg === '1') ||
+    responses[q.QID]?.photoConfirmed
+  );
+
+  const handleUsePhoto = (qid) => {
+    setResponses((prev) => ({
+      ...prev,
+      [qid]: {
+        ...prev[qid],
+        photoConfirmed: true,
+      },
+    }));
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-md max-w-3xl mx-auto space-y-6">
-      <h3 className="text-xl font-semibold text-gray-800">Checklist Questions</h3>
+    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6 bg-white p-6 rounded-xl shadow">
+      <h3 className="text-xl font-semibold">Checklist Questions</h3>
 
-      {/* Name Field */}
       <div>
-        <label className="block font-medium text-gray-700 mb-1">Name:</label>
+        <label className="block mb-1">Name:</label>
         <input
           type="text"
           value={name}
           readOnly
-          className="w-full px-3 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
+          className="w-full px-3 py-2 border rounded bg-gray-100"
         />
       </div>
 
-      {/* Badge Field */}
       <div>
-        <label className="block font-medium text-gray-700 mb-1">Badge Number:</label>
+        <label className="block mb-1">Badge Number:</label>
         <input
           type="text"
           value={badge}
           onChange={(e) => setBadge(e.target.value)}
           required
-          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border rounded"
         />
       </div>
 
-      {/* Checklist Questions */}
-      <div className="space-y-4">
-        {questions.map((q) => (
-          <div key={q.QID} className="border p-4 rounded-lg">
-            <label className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={responses[q.QID]?.checked || false}
-                onChange={(e) => handleResponseChange(q.QID, e.target.checked)}
-                className="h-5 w-5"
-              />
-              <span className="text-gray-800">{q.Question}</span>
-            </label>
+      {questions.map((q) => (
+        <div key={q.QID} className="border p-4 rounded space-y-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={responses[q.QID]?.checked || false}
+              onChange={(e) => handleResponseChange(q.QID, e.target.checked)}
+            />
+            {q.Question}
+          </label>
 
-            {(responses[q.QID]?.checked &&
-              (q.ReqImg === true || q.ReqImg === 1 || q.ReqImg === '1')) && (
-              <div className="mt-2 flex gap-3">
-                {!cameraActive && !photoTaken && (
+          {/* Photo Required */}
+          {responses[q.QID]?.checked &&
+            (q.ReqImg === true || q.ReqImg === 1 || q.ReqImg === '1') && (
+              <>
+                {!responses[q.QID].photoTaken && activeCameraQID !== q.QID && (
                   <button
                     type="button"
-                    onClick={startCamera}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    onClick={() => startCamera(q.QID)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded"
                   >
                     Start Camera
                   </button>
                 )}
-                {cameraActive && !photoTaken && (
-                  <button
-                    type="button"
-                    onClick={() => handlePhotoCapture(q.QID)}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Capture Photo
-                  </button>
+
+                {activeCameraQID === q.QID && (
+                  <div className="mt-2">
+                    <video ref={videoRef} autoPlay muted playsInline className="w-full max-w-sm border rounded" />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCapture(q.QID)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        Capture
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="bg-red-500 text-white px-3 py-1 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 )}
-                {photoTaken && (
-                  <button
-                    type="button"
-                    onClick={handleRetakePhoto}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Retake Photo
-                  </button>
+
+                {responses[q.QID].photoTaken && responses[q.QID].previewUrl && !responses[q.QID].photoConfirmed && (
+                  <div className="mt-2">
+                    <img
+                      src={responses[q.QID].previewUrl}
+                      alt="Preview"
+                      className="w-full max-w-sm border rounded"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleUsePhoto(q.QID)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        Use Photo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRetake(q.QID)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                      >
+                        Retake
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </div>
+              </>
             )}
-          </div>
-        ))}
-      </div>
-
-      {/* Video Preview */}
-      {cameraActive && (
-        <div className="mt-4">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full max-w-md rounded-lg border"
-          />
         </div>
-      )}
+      ))}
 
-      {/* Submit */}
-      <div className="pt-4">
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition"
-        >
-          Submit
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700"
+        disabled={!allPhotosConfirmed}
+      >
+        Submit
+      </button>
     </form>
   );
 }
