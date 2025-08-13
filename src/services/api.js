@@ -1,9 +1,7 @@
 // src/services/api.js
 
 const BASE_URL = import.meta.env.VITE_LOCAL_HOST;
-//const BASE_URL = 'http://localhost:3000';
-//const BASE_URL = import.meta.env.VITE_LOCAL_HOST;
-// Adjust this to your backend URL
+
 
 export async function fetchPlants() {
   const res = await fetch(`${BASE_URL}/api/tpm/getPlants`);
