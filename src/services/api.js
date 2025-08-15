@@ -1,6 +1,6 @@
 // src/services/api.js
 
-const BASE_URL = import.meta.env.VITE_LOCAL_HOST;
+const BASE_URL = import.meta.env.VITE_PROD_HOST;
 
 
 export async function fetchPlants() {
